@@ -2,32 +2,59 @@ import { drivers } from "./data.js";
 
 const marketDiv = document.getElementById("driver-market");
 
-// Function to update driver prices
+// Function to create driver stock cards
 function updateMarket() {
     marketDiv.innerHTML = "";
-    drivers.forEach((driver, index) => {
-        const priceChange = (Math.random() * 10 - 5).toFixed(2); // Random price fluctuation
-        driver.price = Math.max(50, driver.price + parseFloat(priceChange)); // Prevents negative price
-        driver.change = parseFloat(priceChange);
 
-        // Create driver card
-        const driverCard = document.createElement("div");
-        driverCard.innerHTML = `
-            <h3>${driver.name}</h3>
-            <p>💰 Price: $${driver.price.toFixed(2)}</p>
-            <p style="color:${priceChange >= 0 ? 'green' : 'red'};">
-                ${priceChange >= 0 ? "📈" : "📉"} ${priceChange}
+    drivers.forEach((driver, index) => {
+        const priceChangeClass = driver.change >= 0 ? "price-up" : "price-down";
+        const priceChangeIcon = driver.change >= 0 ? "📈" : "📉";
+
+        const card = document.createElement("div");
+        card.classList.add("driver-card");
+
+        card.innerHTML = `
+            <h3 class="driver-name">${driver.name}</h3>
+            <p class="driver-price">Price: $${driver.price.toFixed(2)} 
+                <span class="${priceChangeClass}"> 
+                    ${priceChangeIcon} ${driver.change.toFixed(2)} (${((driver.change / driver.price) * 100).toFixed(2)}%)
+                </span>
             </p>
-            <button onclick="buyDriver(${index})">Invest</button>
+            <img src="${driver.image}" alt="${driver.name}">
+            <br>
+            <img src="${driver.teamLogo}" alt="Team Logo" style="width:50px;">
+            <br>
+            <button class="buy-button" onclick="buyDriver(${index})">BUY</button>
         `;
-        marketDiv.appendChild(driverCard);
+
+        marketDiv.appendChild(card);
     });
 }
 
-// Function to buy a driver (simplified)
+// Function to buy driver (adds to portfolio)
 function buyDriver(index) {
-    alert(`You bought shares in ${drivers[index].name}!`);
+    let driver = drivers[index];
+    let portfolio = JSON.parse(localStorage.getItem("portfolio")) || {};
+
+    if (!portfolio[driver.name]) {
+        portfolio[driver.name] = { shares: 0, totalSpent: 0 };
+    }
+    
+    portfolio[driver.name].shares += 1;
+    portfolio[driver.name].totalSpent += driver.price;
+
+    localStorage.setItem("portfolio", JSON.stringify(portfolio));
+
+    alert(`You invested in ${driver.name}!`);
 }
 
-setInterval(updateMarket, 3000); // Update every 3 seconds
+setInterval(() => {
+    drivers.forEach(driver => {
+        let change = (Math.random() * 2 - 1).toFixed(2);
+        driver.price = Math.max(20, driver.price + parseFloat(change));
+        driver.change = parseFloat(change);
+    });
+    updateMarket();
+}, 5000); // Updates every 5 seconds
+
 updateMarket();

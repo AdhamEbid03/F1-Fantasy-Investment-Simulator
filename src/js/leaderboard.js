@@ -52,5 +52,12 @@ function updateLeaderboard() {
     });
 }
 
+document.getElementById("reset-leaderboard").addEventListener("click", function() {
+    localStorage.removeItem("portfolio"); // Clears only investment data
+    alert("Leaderboard reset!");
+    location.reload(); // Refresh page to apply changes
+});
+
+
 // Call update function on page load
 updateLeaderboard();
