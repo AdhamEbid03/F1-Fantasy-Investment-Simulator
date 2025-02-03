@@ -37,12 +37,27 @@ footer{
     display: flex;
     justify-content: space-between;
     width: 100%;
-    background: #fff;
+    background: white;
     padding: 10px;
     margin: 5px 0;
     border-radius: 5px;
     box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
 }
+
+.reset-button {
+    background: red;
+    color: white;
+    padding: 10px;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 5px;
+    margin-top: 20px;
+}
+.reset-button:hover {
+    background: darkred;
+}
+
 #portfolio-summary {
     background: #d61c4e;
     color: white;
@@ -126,4 +141,35 @@ footer{
 
 .buy-button:hover {
     background-color: darkorange;
+}
+
+.shares-section {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    background: #f8f9fa;
+    padding: 5px;
+    margin-top: 5px;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+.sell-button {
+    background-color: red;
+    color: white;
+    border: none;
+    padding: 10px;
+    font-size: 16px;
+    width: 45%;
+    cursor: pointer;
+    border-radius: 5px;
+    margin-top: 10px;
+}
+
+.sell-button:hover {
+    background-color: darkred;
+}
+
+.driver-card .buy-button {
+    width: 45%;
 }
