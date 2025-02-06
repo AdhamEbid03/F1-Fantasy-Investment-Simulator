@@ -173,3 +173,37 @@ footer{
 .driver-card .buy-button {
     width: 45%;
 }
+
+.sell-all-button {
+    background-color: darkred;
+    color: white;
+    border: none;
+    padding: 10px;
+    font-size: 16px;
+    width: 45%;
+    cursor: pointer;
+    border-radius: 5px;
+    margin-top: 10px;
+}
+
+.sell-all-button:hover {
+    background-color: crimson;
+}
+
+.reset-btn {
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    background-color: red;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: 5px;
+    font-weight: bold;
+}
+
+.reset-btn:hover {
+    background-color: darkred;
+}

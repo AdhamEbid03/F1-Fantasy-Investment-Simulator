@@ -1,25 +1,78 @@
-import { drivers } from "./data.js"; // Import driver data
+import { drivers as initialDrivers } from "./data.js"; // Import default driver data
 
 const marketDiv = document.getElementById("driver-market");
+const balanceSpan = document.getElementById("user-balance");
 
-// Function to load driver prices from localStorage
+// Function to load drivers from localStorage or reset to default
 function loadSavedDrivers() {
     let savedDrivers = JSON.parse(localStorage.getItem("drivers"));
-    if (savedDrivers) {
-        savedDrivers.forEach((savedDriver, index) => {
-            drivers[index].price = savedDriver.price;
-            drivers[index].change = savedDriver.change;
-        });
+
+    if (!savedDrivers || savedDrivers.length === 0 || savedDrivers.length !== initialDrivers.length) {
+        localStorage.setItem("drivers", JSON.stringify(initialDrivers)); // Reset drivers
+        return JSON.parse(JSON.stringify(initialDrivers)); // Fresh copy to avoid reference issues
     }
+    return savedDrivers;
 }
 
-// Function to save driver prices to localStorage
-function saveDriversToStorage() {
+// Function to save drivers to localStorage
+function saveDriversToStorage(drivers) {
     localStorage.setItem("drivers", JSON.stringify(drivers));
+}
+
+// Function to update stock prices every 5 seconds
+function updateStockPrices() {
+    let drivers = loadSavedDrivers();
+
+    drivers.forEach(driver => {
+        let priceChange = (Math.random() * 4 - 2).toFixed(2); // Random change between -2 and +2
+        driver.change = parseFloat(priceChange);
+        driver.price = Math.max(20, driver.price + driver.change); // Prevents price going below 20
+
+        // Store price history (keep only last 10 prices)
+        if (!driver.priceHistory) driver.priceHistory = [];
+        driver.priceHistory.push(driver.price);
+        if (driver.priceHistory.length > 10) driver.priceHistory.shift(); // Keep only last 10 records
+    });
+
+    saveDriversToStorage(drivers); // Save new prices
+    updateMarket(); // Refresh UI
+}
+
+// Function to load user balance
+function loadUserBalance() {
+    let balance = localStorage.getItem("userBalance");
+    if (balance === null) {
+        balance = 50000; // Set initial balance if not set
+        localStorage.setItem("userBalance", balance);
+    }
+    return parseFloat(balance);
+}
+
+// Function to save user balance
+function saveUserBalance(amount) {
+    localStorage.setItem("userBalance", amount);
+}
+
+// Function to format numbers with commas
+function formatCurrency(amount) {
+    return `$${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+// Function to update balance display
+function updateBalanceDisplay() {
+    let balance = loadUserBalance();
+    let balanceElement = document.getElementById("user-balance");
+    let marketBalanceContainer = document.getElementById("market-balance");
+
+    if (balanceElement && marketBalanceContainer) {
+        balanceElement.innerText = formatCurrency(balance);
+        marketBalanceContainer.style.display = "block"; // Show balance only on Market page
+    }
 }
 
 // Function to create driver stock cards
 function updateMarket() {
+    let drivers = loadSavedDrivers();
     marketDiv.innerHTML = "";
 
     let portfolio = JSON.parse(localStorage.getItem("portfolio")) || {}; // Load user's portfolio
@@ -27,9 +80,9 @@ function updateMarket() {
     drivers.forEach((driver, index) => {
         const priceChangeClass = driver.change >= 0 ? "price-up" : "price-down";
         const priceChangeIcon = driver.change >= 0 ? "📈" : "📉";
-        
-        let userShares = portfolio[driver.name]?.shares || 0; // Get user shares in this driver
-        let hasShares = userShares > 0; // Check if user owns shares
+
+        let userShares = portfolio[driver.name]?.shares || 0;
+        let hasShares = userShares > 0;
 
         const card = document.createElement("div");
         card.classList.add("driver-card");
@@ -46,7 +99,10 @@ function updateMarket() {
             <img src="${driver.teamLogo}" alt="Team Logo" style="width:50px;">
             <br>
             <button class="buy-button" data-index="${index}">BUY</button>
-            ${hasShares ? `<button class="sell-button" data-index="${index}">SELL</button>` : ""}
+            ${hasShares ? `
+                <button class="sell-button" data-index="${index}">SELL</button>
+                <button class="sell-all-button" data-index="${index}">SELL ALL</button>
+            ` : ""}
         `;
 
         marketDiv.appendChild(card);
@@ -55,111 +111,159 @@ function updateMarket() {
     // Attach event listeners after the elements are created
     document.querySelectorAll(".buy-button").forEach(button => {
         button.addEventListener("click", (event) => {
-            const index = event.target.getAttribute("data-index");
-            openInvestmentWindow(index, "buy");
+            const index = parseInt(event.target.getAttribute("data-index"));
+            buyDriver(index);
         });
     });
 
     document.querySelectorAll(".sell-button").forEach(button => {
         button.addEventListener("click", (event) => {
-            const index = event.target.getAttribute("data-index");
-            openInvestmentWindow(index, "sell");
+            const index = parseInt(event.target.getAttribute("data-index"));
+            sellDriver(index);
         });
     });
 
-    saveDriversToStorage(); // Save driver prices after updating UI
-}
-
-// Function to update stock prices every 5 seconds
-function updateStockPrices() {
-    drivers.forEach(driver => {
-        let change = (Math.random() * 2 - 1).toFixed(2);
-        driver.price = Math.max(20, driver.price + parseFloat(change));
-        driver.change = parseFloat(change);
+    document.querySelectorAll(".sell-all-button").forEach(button => {
+        button.addEventListener("click", (event) => {
+            const index = parseInt(event.target.getAttribute("data-index"));
+            sellAllShares(index);
+        });
     });
 
-    updateMarket();
-    saveDriversToStorage(); // Save new prices to localStorage
+    updateBalanceDisplay();
 }
 
-// Function to open input window for buying/selling
-function openInvestmentWindow(index, action) {
+// Function to buy shares
+function buyDriver(index) {
+    let drivers = loadSavedDrivers();
     let driver = drivers[index];
+    let balance = loadUserBalance();
     let portfolio = JSON.parse(localStorage.getItem("portfolio")) || {};
 
-    let maxSellableShares = portfolio[driver.name]?.shares || 0;
-    let isBuying = action === "buy";
+    let amountInvested = prompt(`Enter amount to invest in ${driver.name} (Current Price: $${driver.price.toFixed(2)})`);
+    amountInvested = parseFloat(amountInvested);
 
-    let amount = prompt(`Enter amount to ${isBuying ? "invest in" : "sell"} ${driver.name}. ${isBuying ? `(Current Price: $${driver.price.toFixed(2)})` : `(You own: ${maxSellableShares.toFixed(4)} shares)`}`);
-
-    amount = parseFloat(amount);
-
-    if (isNaN(amount) || amount <= 0) {
+    if (isNaN(amountInvested) || amountInvested <= 0) {
         alert("Invalid amount! Please enter a valid value.");
         return;
     }
 
-    if (!isBuying && amount > maxSellableShares) {
-        alert("You do not own enough shares to sell this amount.");
+    if (amountInvested > balance) {
+        alert("Not enough balance to complete this transaction!");
         return;
     }
 
-    if (isBuying) {
-        buyDriver(index, amount);
-    } else {
-        sellDriver(index, amount);
-    }
-}
-
-// Function to buy a driver and store fractional shares
-function buyDriver(index, amountInvested) {
-    let portfolio = JSON.parse(localStorage.getItem("portfolio")) || {};
-    let driver = drivers[index];
-
-    let sharesBought = amountInvested / driver.price; // Fractional shares
+    let sharesBought = amountInvested / driver.price;
 
     if (!portfolio[driver.name]) {
-        portfolio[driver.name] = { shares: 0, totalSpent: 0, purchaseHistory: [] };
+        portfolio[driver.name] = { shares: 0, totalSpent: 0 };
     }
 
     portfolio[driver.name].shares += sharesBought;
     portfolio[driver.name].totalSpent += amountInvested;
-    portfolio[driver.name].purchaseHistory.push({ price: driver.price, shares: sharesBought });
 
+    balance -= amountInvested;
+    saveUserBalance(balance);
     localStorage.setItem("portfolio", JSON.stringify(portfolio));
 
     alert(`You invested $${amountInvested.toFixed(2)} in ${driver.name}, receiving ${sharesBought.toFixed(4)} shares.`);
-    updateMarket(); // Refresh market UI
+    updateMarket();
 }
 
 // Function to sell driver shares
-function sellDriver(index, sharesToSell) {
-    let portfolio = JSON.parse(localStorage.getItem("portfolio")) || {};
+function sellDriver(index) {
+    let drivers = loadSavedDrivers();
     let driver = drivers[index];
+    let balance = loadUserBalance();
+    let portfolio = JSON.parse(localStorage.getItem("portfolio")) || {};
+    let realizedPL = parseFloat(localStorage.getItem("realizedPL")) || 0;
 
-    if (!portfolio[driver.name] || portfolio[driver.name].shares < sharesToSell) {
-        alert("Error: Not enough shares to sell.");
+    if (!portfolio[driver.name] || portfolio[driver.name].shares <= 0) {
+        alert("You don't own any shares to sell.");
         return;
     }
 
-    let sellValue = sharesToSell * driver.price; // Total amount received from selling
+    let maxSellableShares = portfolio[driver.name].shares;
+    let sharesToSell = prompt(`Enter number of shares to sell for ${driver.name}. You own: ${maxSellableShares.toFixed(4)} shares.`);
 
-    portfolio[driver.name].shares -= sharesToSell;
-    portfolio[driver.name].totalSpent -= (portfolio[driver.name].totalSpent / portfolio[driver.name].shares) * sharesToSell;
+    sharesToSell = parseFloat(sharesToSell);
 
-    if (portfolio[driver.name].shares <= 0) {
-        delete portfolio[driver.name]; // Remove from portfolio if no shares left
+    if (isNaN(sharesToSell) || sharesToSell <= 0 || sharesToSell > maxSellableShares) {
+        alert("Invalid number of shares!");
+        return;
     }
 
-    localStorage.setItem("portfolio", JSON.stringify(portfolio));
+    let sellValue = sharesToSell * driver.price;
+    let costBasis = (portfolio[driver.name].totalSpent / maxSellableShares) * sharesToSell;
+    let profitloss = sellValue - costBasis;
 
-    alert(`You sold ${sharesToSell.toFixed(4)} shares of ${driver.name} for $${sellValue.toFixed(2)}.`);
-    updateMarket(); // Refresh market UI
+    realizedPL += profitloss;
+    balance += sellValue;
+
+    portfolio[driver.name].shares -= sharesToSell;
+    portfolio[driver.name].totalSpent -= costBasis;
+
+    if (portfolio[driver.name].shares <= 0) {
+        delete portfolio[driver.name];
+    }
+
+    saveUserBalance(balance);
+    localStorage.setItem("portfolio", JSON.stringify(portfolio));
+    localStorage.setItem("realizedPL", realizedPL.toFixed(2));
+
+    alert(`You sold ${sharesToSell.toFixed(4)} shares of ${driver.name} for ${formatCurrency(sellValue)}.`);
+    updateMarket();
+    updateRealizedPLDisplay();
 }
 
-// Load saved drivers before updating market
-loadSavedDrivers();
+function sellAllShares(index) {
+    let drivers = loadSavedDrivers();
+    let driver = drivers[index];
+    let balance = loadUserBalance();
+    let portfolio = JSON.parse(localStorage.getItem("portfolio")) || {};
+    let realizedPL = parseFloat(localStorage.getItem("realizedPL")) || 0;
+
+    if (!portfolio[driver.name] || portfolio[driver.name].shares <= 0) {
+        alert("No shares to sell.");
+        return;
+    }
+
+    let totalShares = portfolio[driver.name].shares;
+    let sellValue = totalShares * driver.price;
+    let costBasis = portfolio[driver.name].totalSpent; // Total cost of the shares
+    let profitLoss = sellValue - costBasis;
+
+    realizedPL += profitLoss;
+    balance += sellValue;
+
+    delete portfolio[driver.name];
+
+    saveUserBalance(balance);
+    localStorage.setItem("portfolio", JSON.stringify(portfolio));
+    localStorage.setItem("realizedPL", realizedPL.toFixed(2));
+
+    alert(`You sold ALL (${totalShares.toFixed(4)}) shares of ${driver.name} for ${formatCurrency(sellValue)}.`);
+    updateMarket();
+    updateRealizedPLDisplay();
+}
+
+function resetGame(){
+    let confirmReset = confirm("Are you sure you want to reset everything? This will erase all data and restart from scratch.");
+
+    if(confirmReset){
+        localStorage.clear(); // Clears all saved data
+        localStorage.setItem("userBalance", 50000); // Reset balance
+        localStorage.setItem("drivers", JSON.stringify(initialDrivers)); // Reset drivers
+        localStorage.setItem("portfolio", JSON.stringify({})); // Clear portfolio
+        localStorage.setItem("realizedPL", 0); // Reset realized profit/loss
+        location.reload(); // Reload page to apply reset
+    }
+}
+
+document.getElementById("reset-button").addEventListener("click",resetGame);
+
+// Load saved drivers & update market
 updateMarket();
 
-// Automatically update market prices every 5 seconds
+// Update stock prices every 5 seconds
 setInterval(updateStockPrices, 5000);

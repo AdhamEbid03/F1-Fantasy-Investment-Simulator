@@ -65,5 +65,37 @@ document.getElementById("reset-leaderboard").addEventListener("click", function(
     location.reload(); // Refresh page
 });
 
+// Function to format numbers with commas
+function formatCurrency(amount) {
+    return `$${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+// Function to load user balance
+function loadUserBalance() {
+    let balance = localStorage.getItem("userBalance");
+    if (balance === null) {
+        balance = 50000;
+        localStorage.setItem("userBalance", balance);
+    }
+    return parseFloat(balance);
+}
+
+// Function to update balance display
+function updateBalanceDisplay() {
+    let balance = loadUserBalance();
+    let balanceElement = document.getElementById("user-balance");
+
+    if (balanceElement) {
+        balanceElement.innerText = formatCurrency(balance);
+    }
+}
+
+window.addEventListener("storage", function (event) {
+    if (event.key === "userBalance") {
+        updateBalanceDisplay();
+    }
+});
+
 // Initialize leaderboard display
 updateLeaderboard();
+updateBalanceDisplay();

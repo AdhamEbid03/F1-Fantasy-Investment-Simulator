@@ -3,8 +3,60 @@ let portfolio = JSON.parse(localStorage.getItem("portfolio")) || {};
 const portfolioDiv = document.getElementById("portfolio-list");
 const totalValueSpan = document.getElementById("total-value");
 
+// Function to format numbers with commas
+function formatCurrency(amount) {
+    return `$${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+// Function to load user balance
+function loadUserBalance() {
+    let balance = localStorage.getItem("userBalance");
+    if (balance === null) {
+        balance = 50000;
+        localStorage.setItem("userBalance", balance);
+    }
+    return parseFloat(balance);
+}
+
+// Function to load realized profit/loss
+function loadRealizedPL() {
+    let realizedPL = localStorage.getItem("realizedPL");
+    if (realizedPL === null) {
+        realizedPL = 0;
+        localStorage.setItem("realizedPL", realizedPL);
+    }
+    return parseFloat(realizedPL);
+}
+
+// Function to update balance display
+function updateBalanceDisplay() {
+    let balance = loadUserBalance();
+    let balanceElement = document.getElementById("user-balance").innerText = formatCurrency(balance);
+
+    if(balanceElement){
+        balanceElement.innerText = formatCurrency(balance);
+    }
+}
+
+// Function to update realized profit/loss display
+function updateRealizedPLDisplay() {
+    let realizedPL = loadRealizedPL();
+    let realizedPLElement = document.getElementById("realized-pl");
+
+    if (realizedPLElement)
+    {
+        realizedPLElement.innerText = formatCurrency(realizedPL);
+        realizedPLElement.style.color = realizedPL >= 0 ? "green" : "red"; // Color-coded profit/loss
+    }
+}
+
 // Function to update the portfolio display
 function updatePortfolio() {
+    let portfolioDiv = document.getElementById("portfolio-list");
+    let totalValueSpan = document.getElementById("total-value");
+
+    if(!portfolioDiv || !totalValueSpan) return;
+
     portfolioDiv.innerHTML = "";
 
     let totalValue = 0;
@@ -26,13 +78,9 @@ function updatePortfolio() {
         driverValues.push(totalInvestmentValue);
 
         // Separate whole and fractional shares
-        let wholeShares = Math.floor(driver.shares);
-        let fractionalShares = driver.shares - wholeShares;
-
-        // Determine how to display shares (clean format)
-        let displayShares = fractionalShares === 0 
-            ? `${wholeShares} shares`
-            : `${driver.shares.toFixed(4)} shares`; // Show full precision only if fractional exists
+        let displayShares = driver.shares % 1 === 0
+            ? `${Math.floor(driver.shares)} shares`
+            : `${driver.shares.toFixed(4)} shares`;
 
         // Calculate weighted average purchase price
         let totalSpent = driver.totalSpent;
@@ -54,6 +102,9 @@ function updatePortfolio() {
     });
 
     totalValueSpan.innerText = `$${totalValue.toFixed(2)}`;
+
+    updateBalanceDisplay();
+    updateRealizedPLDisplay();
 
     // Update chart
     generatePortfolioChart(driverNames, driverValues);
@@ -98,3 +149,5 @@ function generatePortfolioChart(driverNames, driverValues) {
 
 // Initialize portfolio display
 updatePortfolio();
+updateBalanceDisplay();
+updateRealizedPLDisplay();
