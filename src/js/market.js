@@ -168,6 +168,7 @@ function buyDriver(index) {
 
     alert(`You invested $${amountInvested.toFixed(2)} in ${driver.name}, receiving ${sharesBought.toFixed(4)} shares.`);
     updateMarket();
+    updateSharesOwned();
 }
 
 // Function to sell driver shares
@@ -214,6 +215,7 @@ function sellDriver(index) {
     alert(`You sold ${sharesToSell.toFixed(4)} shares of ${driver.name} for ${formatCurrency(sellValue)}.`);
     updateMarket();
     updateRealizedPLDisplay();
+    updateSharesOwned();
 }
 
 function sellAllShares(index) {
@@ -246,21 +248,6 @@ function sellAllShares(index) {
     updateMarket();
     updateRealizedPLDisplay();
 }
-
-function resetGame(){
-    let confirmReset = confirm("Are you sure you want to reset everything? This will erase all data and restart from scratch.");
-
-    if(confirmReset){
-        localStorage.clear(); // Clears all saved data
-        localStorage.setItem("userBalance", 50000); // Reset balance
-        localStorage.setItem("drivers", JSON.stringify(initialDrivers)); // Reset drivers
-        localStorage.setItem("portfolio", JSON.stringify({})); // Clear portfolio
-        localStorage.setItem("realizedPL", 0); // Reset realized profit/loss
-        location.reload(); // Reload page to apply reset
-    }
-}
-
-document.getElementById("reset-button").addEventListener("click",resetGame);
 
 // Load saved drivers & update market
 updateMarket();

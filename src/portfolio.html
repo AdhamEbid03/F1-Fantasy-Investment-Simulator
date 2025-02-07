@@ -16,17 +16,33 @@
         
         <div id="portfolio-summary">
             <h3>💰 Balance: <span id="user-balance">$50,000.00</span></h3>
-            <h3>Current Portfolio Value: <span id="total-value">$0</span></h3>
-            <h3>Realized P/L: <span id="realized-pl">$0.00</span></h3>
+            <h3>📊 Realized P/L: <span id="realized-pl">$0.00</span></h3>
         </div>
 
-        <h3>My Holdings</h3>
-        <div id="portfolio-list"></div>
+        <div id="shares-owned">
+            <h3>📄 Shares Owned</h3>
+            <div id="shares-list">
+                <p>No investments yet.</p>
+            </div>
+        </div>
 
-        <h3>📈 Performance Chart</h3>
-        <canvas id="portfolio-chart"></canvas> <!-- Chart.js canvas -->
+        <div id="portfolio-tracker">
+            <h2>📈 Portfolio Value</h2>
+            <h1 id="portfolio-value">$50,000.00</h1>
+            <p>Last 24h: <span id="portfolio-change" class="positive">+0.00</span></p>
+            <p>Rate of Return: <span id="rate-of-return" class="positive">0.00%</span></p>
+             
+            <!-- Portfolio Chart -->
+            <div id="chart-container">
+                <canvas id="portfolio-chart"></canvas>
+            </div>
+</div>
+
+        </div>
+
     </main>
 
     <script src="/src/js/portfolio.js"></script>
+    <script src="/src/js/global.js"></script>
 </body>
 </html>

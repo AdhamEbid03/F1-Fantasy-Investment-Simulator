@@ -58,13 +58,6 @@ function updateLeaderboard() {
     });
 }
 
-// Reset leaderboard data
-document.getElementById("reset-leaderboard").addEventListener("click", function() {
-    localStorage.removeItem("portfolio"); // Clears only portfolio data
-    alert("Leaderboard reset!");
-    location.reload(); // Refresh page
-});
-
 // Function to format numbers with commas
 function formatCurrency(amount) {
     return `$${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
