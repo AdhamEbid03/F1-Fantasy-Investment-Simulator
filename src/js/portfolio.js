@@ -180,9 +180,9 @@ function updatePortfolioChart() {
     let ctx = document.getElementById("portfolio-chart").getContext("2d");
     let history = loadPortfolioHistory();
 
-    // Ensure the history is always reset to 0 on a new session
-    if (history.length === 0 || history.every(val => val === 0)) {
-        history = Array(10).fill(0);
+    // Ensure history has data, otherwise set default values
+    if (history.length === 0) {
+        history = Array(10).fill(50000); // Default to $50,000
         localStorage.setItem("portfolioHistory", JSON.stringify(history));
     }
 
@@ -204,10 +204,29 @@ function updatePortfolioChart() {
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: true,
+                maintainAspectRatio: false,
                 animation: false,
                 scales: {
-                    y: { beginAtZero: true } // Forces the chart to start from 0
+                    y: {
+                        beginAtZero: false,
+                        ticks: {
+                            callback: function(value) {
+                                return value.toLocaleString(); // Adds commas for readability
+                            },
+                            font: {
+                                size: 14 // Increases label size
+                            }
+                        },
+                        grid: {
+                            display: true,
+                            color: "rgba(255, 255, 255, 0.1)" // Light grid lines
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
                 },
                 plugins: {
                     legend: { display: false }
@@ -220,6 +239,7 @@ function updatePortfolioChart() {
         portfolioChart.update('none');
     }
 }
+
 // Function to see the amount of shares owend in a driver
 function updateSharesOwned() {
     let sharesListDiv = document.getElementById("shares-list");
